@@ -1,4 +1,4 @@
-# Workshops Repo
+# Public Determined.AI Workshops Repo
 Public repo to store files for customer, partner, and internal workshops.
 
 Current content:
