@@ -13,7 +13,7 @@ hyperparameters:
     dataset_name: 'english_to_latex'
 environment:
     image: "hugcyrill/workshops:chat_0.1"
-records_per_epoch: 25 # 50 examples, 2 per batch: 50/2 is 25 records for an epoch
+records_per_epoch: 50 # 50 examples, 2 per batch: 50/2 is 25 records for an epoch
 resources:
     slots_per_trial: 1
 min_validation_period:

@@ -3,7 +3,7 @@ workspace: <your_workspace>
 project: <your_project>
 description: "Chicago DS Workshop"
 hyperparameters:
-    global_batch_size: 32
+    global_batch_size: 128
     weight_decay: 0.0
     learning_rate: 5e-5
     adam_epsilon: 1e-8
@@ -13,9 +13,13 @@ hyperparameters:
     dataset_name: 'PDS2'
 environment:
     image: "hugcyrill/workshops:chat_0.1"
-records_per_epoch: 147 # 4696 examples, 128 per batch: 601088/21 is 147 records for an epoch
+    environment_variables:                                                                       
+    - NCCL_DEBUG=INFO                                                                           
+    # You may need to modify this to match your network configuration.                          
+    - NCCL_SOCKET_IFNAME=ens,eth,ib
+records_per_epoch: 4696 # 4696 examples
 resources:
-    slots_per_trial: 2
+    slots_per_trial: 16
 min_validation_period:
   batches: 4
 min_checkpoint_period:
