@@ -113,7 +113,6 @@ class GPT2Finetune(PyTorchTrial):
     def format_batch(self,batch):
         '''
         '''
-        print("batch: ",batch.keys())
         inputs=batch['input_ids']
         outputs = batch['labels']
         return inputs, outputs
