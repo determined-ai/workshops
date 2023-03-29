@@ -1,0 +1,11 @@
+python run_lm_finetuning.py \
+  --train_data_file 'data/PDS2.txt' \
+  --output_dir 'test_finetune/' \
+  --model_type 'gpt2'   \
+  --tokenizer_name GPT2Tokenizer \
+  --local_rank -1 \
+  --per_gpu_train_batch_size 1 \
+  --config_name GPT2Config \
+  --do_train \
+  --overwrite_output_dir \
+  --num_train_epochs 20
