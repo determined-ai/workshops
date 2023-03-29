@@ -1,16 +1,24 @@
-name: gpt2_finetune_data_science_chatbot
+name: adaptive_gpt2_finetune_data_science_chatbot
 hyperparameters:
     global_batch_size: 32
     weight_decay: 0.0
-    learning_rate: 5e-5
-    adam_epsilon: 1e-8
+    learning_rate:
+        type: log
+        minval: -6.0
+        maxval: -4.0
+        base: 10.0
+    adam_epsilon:
+        type: log
+        minval: -10.0
+        maxval: -4.0
+        base: 10.0
     warmup_steps: 0
     epochs: 10
     gradient_accumulation_steps: 1
     dataset_name: 'PDS2'
 environment:
     image: "hugcyrill/workshops:chat_0.1"
-records_per_epoch: 147 # 4696 examples, 128 per batch: 601088/21 is 147 records for an epoch
+records_per_epoch: 147 # 4696 examples, 32 per batch: 4696/21 is 147 records for an epoch
 resources:
     slots_per_trial: 1
 min_validation_period:
@@ -18,10 +26,11 @@ min_validation_period:
 min_checkpoint_period:
   batches: 147
 searcher:
-    name: single
+    name: adaptive_asha
     metric: eval_loss
     max_length:
         epochs: 30
     smaller_is_better: true
+    max_trials: 4
 max_restarts: 0
 entrypoint: model_def:GPT2Finetune

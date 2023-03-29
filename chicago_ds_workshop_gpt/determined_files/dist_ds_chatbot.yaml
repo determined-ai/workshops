@@ -1,4 +1,4 @@
-name: gpt2_finetune_data_science_chatbot
+name: dist_gpt2_finetune_data_science_chatbot
 hyperparameters:
     global_batch_size: 32
     weight_decay: 0.0
@@ -6,16 +6,13 @@ hyperparameters:
     adam_epsilon: 1e-8
     warmup_steps: 0
     epochs: 10
-    device: 'cuda'
     gradient_accumulation_steps: 1
-    dataset_name: 'hamlet'
-    train_batch_size: 32
-    eval_batch_size: 32
+    dataset_name: 'PDS2'
 environment:
     image: "hugcyrill/workshops:chat_0.1"
 records_per_epoch: 147 # 4696 examples, 128 per batch: 601088/21 is 147 records for an epoch
 resources:
-    slots_per_trial: 1
+    slots_per_trial: 2
 min_validation_period:
   batches: 4
 min_checkpoint_period:

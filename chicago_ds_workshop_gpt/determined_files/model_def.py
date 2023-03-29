@@ -44,7 +44,6 @@ class GPT2Finetune(PyTorchTrial):
         self.adam_epsilon=self.context.get_hparam("adam_epsilon")
         self.warmup_steps=self.context.get_hparam("warmup_steps")
         self.epochs = self.context.get_hparam("epochs")
-        self.device = self.context.get_hparam("device")
         self.gradient_accumulation_steps = self.context.get_hparam("gradient_accumulation_steps")
         # get tokenizer
         self.tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
@@ -53,8 +52,6 @@ class GPT2Finetune(PyTorchTrial):
         # get dataset
         self.dataset_name=self.context.get_hparam("dataset_name")
         self.dataset = self.get_datasets(self.dataset_name)
-        self.train_batch_size = self.context.get_hparam("train_batch_size")
-        self.eval_batch_size = self.context.get_hparam("eval_batch_size")
         
         self.t_total = len(self.dataset) // self.gradient_accumulation_steps * self.epochs
     
@@ -116,17 +113,15 @@ class GPT2Finetune(PyTorchTrial):
     def format_batch(self,batch):
         '''
         '''
-        if self.dataset_name=='english_to_latex':
-            inputs, outputs = (batch['input_ids'].to(self.device),batch['labels'].to(self.device))
-        else:
-            # print(batch)
-            inputs, outputs = (batch['input_ids'].to(self.device),batch['labels'].to(self.device))
+        print("batch: ",batch.keys())
+        inputs=batch['input_ids']
+        outputs = batch['labels']
         return inputs, outputs
     def build_training_data_loader(self) -> None:
         '''
         '''
         self.train_sampler = RandomSampler(self.dataset)
-        self.train_dataloader = DataLoader(self.dataset, collate_fn =self.data_collator ,sampler=self.train_sampler, batch_size=self.train_batch_size)
+        self.train_dataloader = DataLoader(self.dataset, collate_fn =self.data_collator ,sampler=self.train_sampler, batch_size=self.context.get_per_slot_batch_size())
         return self.train_dataloader
     
     def get_batch_length(self, batch):
@@ -140,12 +135,13 @@ class GPT2Finetune(PyTorchTrial):
         '''
         '''
         self.eval_sampler = SequentialSampler(self.dataset)
-        self.validataion_dataloader = DataLoader(self.dataset,collate_fn =self.data_collator, sampler=self.eval_sampler, batch_size=self.eval_batch_size)
+        self.validataion_dataloader = DataLoader(self.dataset,collate_fn =self.data_collator, sampler=self.eval_sampler, batch_size=self.context.get_per_slot_batch_size())
         return self.validataion_dataloader
     
     def train_batch(self,batch,epoch_idx, batch_idx):
         '''
         '''
+        print("0-batch: ",batch.keys())
         inputs,labels = self.format_batch(batch)
         outputs = self.model(inputs, labels=labels)
         loss = outputs[0]
@@ -170,35 +166,3 @@ class GPT2Finetune(PyTorchTrial):
             "perplexity": perplexity
         }
         return results
-
-# if __name__ == '__main__':
-    
-#     gpt2_finetune = GPT2Finetune()
-    
-#     epochs = 1
-#     gpt2_finetune.model.train()
-#     gpt2_finetune.model.to(gpt2_finetune.device)
-#     gpt2_finetune.build_train_data_loader()
-#     gpt2_finetune.build_validation_data_loader()
-#     print("Training...")
-#     for e in range(epochs):
-#         for ind,batch in tqdm(enumerate(gpt2_finetune.train_dataloader)):
-
-#             gpt2_finetune.model.zero_grad()
-#             train_results  = gpt2_finetune.train_batch(batch,epoch_idx=e, batch_idx=ind)
-#             train_results.backward()
-#             gpt2_finetune.optimizer.step()
-#             gpt2_finetune.scheduler.step()
-#             print(train_results)
-#             if ind>20:
-#                 break
-#     print("Validation...")
-#     gpt2_finetune.model.eval()
-#     with torch.no_grad():
-
-#         for val_batch in gpt2_finetune.validataion_dataloader:
-#             results = gpt2_finetune.evaluate_batch(val_batch)
-#             print("results:")
-#             print(results)
-#             break
-#         gpt2_finetune.model.train()

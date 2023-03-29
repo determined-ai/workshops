@@ -5,12 +5,9 @@ hyperparameters:
     learning_rate: 5e-5
     adam_epsilon: 1e-8
     warmup_steps: 0
-    epochs: 1
-    device: 'cuda'
+    epochs: 10
     gradient_accumulation_steps: 1
     dataset_name: 'english_to_latex'
-    train_batch_size: 2
-    eval_batch_size: 32
 environment:
     image: "hugcyrill/workshops:chat_0.1"
 records_per_epoch: 25 # 50 examples, 2 per batch: 50/2 is 25 records for an epoch
