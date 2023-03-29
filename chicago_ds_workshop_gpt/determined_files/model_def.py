@@ -140,7 +140,6 @@ class GPT2Finetune(PyTorchTrial):
     def train_batch(self,batch,epoch_idx, batch_idx):
         '''
         '''
-        print("0-batch: ",batch.keys())
         inputs,labels = self.format_batch(batch)
         outputs = self.model(inputs, labels=labels)
         loss = outputs[0]
