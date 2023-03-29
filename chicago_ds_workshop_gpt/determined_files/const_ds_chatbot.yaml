@@ -1,4 +1,7 @@
 name: gpt2_finetune_data_science_chatbot
+workspace: <your_workspace>
+project: <your_project>
+description: "Chicago DS Workshop"
 hyperparameters:
     global_batch_size: 32
     weight_decay: 0.0
