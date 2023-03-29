@@ -3,7 +3,7 @@ workspace: <your_workspace>
 project: <your_project>
 description: "Chicago DS Workshop"
 hyperparameters:
-    global_batch_size: 128
+    global_batch_size: 64
     weight_decay: 0.0
     learning_rate: 5e-5
     adam_epsilon: 1e-8
@@ -19,7 +19,7 @@ environment:
     - NCCL_SOCKET_IFNAME=ens,eth,ib
 records_per_epoch: 4696 # 4696 examples
 resources:
-    slots_per_trial: 16
+    slots_per_trial: 2
 min_validation_period:
   batches: 4
 min_checkpoint_period:
