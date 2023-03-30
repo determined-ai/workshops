@@ -13,7 +13,7 @@ hyperparameters:
     dataset_name: 'PDS2'
 environment:
     image: "hugcyrill/workshops:chat_0.1"
-records_per_epoch: 4696 # 4696 examples
+records_per_epoch: 147 # 4696 examples is the full amount, shortening to 147 for experimentation
 resources:
     slots_per_trial: 1
 min_validation_period:
