@@ -22,6 +22,9 @@ resources:
     slots_per_trial: 2
 min_validation_period:
   batches: 4
+profiling:
+  begin_on_batch: 0
+  enabled: true
 min_checkpoint_period:
   batches: 147
 searcher:
