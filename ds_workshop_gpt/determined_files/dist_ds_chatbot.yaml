@@ -17,7 +17,7 @@ environment:
     - NCCL_DEBUG=INFO                                                                           
     # You may need to modify this to match your network configuration.                          
     - NCCL_SOCKET_IFNAME=ens,eth,ib
-records_per_epoch: 147  # 4696 examples is the full amount, shortening to 147 for experimentation
+records_per_epoch: 147  # There are 4696 examples total in the PDS2 dataset, shortening to 147 records per epoch for experimentation
 resources:
     slots_per_trial: 2
 min_validation_period:
