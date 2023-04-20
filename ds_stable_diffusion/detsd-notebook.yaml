@@ -1,0 +1,11 @@
+description: nb_stable_diffusion
+resources:
+    slots: 1
+    shm_size: 17179869184 # 16 GiB
+    resource_pool: compute-pool-a10
+environment:
+    image:
+      cuda: determinedai/environments:cuda-11.3-pytorch-1.10-tf-2.8-gpu-24586f0
+    environment_variables:
+        - HF_AUTH_TOKEN=YOUR_HF_AUTH_TOKEN_HERE
+idle_timeout: 5h
