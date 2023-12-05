@@ -63,6 +63,8 @@ class OPTFinetuneTrial(PyTorchTrial):
         '''
         '''
         self.context = context
+        self.using_wikitext = self.context.get_hparam("use_hface")
+
         # get hyperparametes
         self.weight_decay=self.context.get_hparam("weight_decay")
         self.learning_rate=self.context.get_hparam("learning_rate")
@@ -145,6 +147,22 @@ class OPTFinetuneTrial(PyTorchTrial):
             return self.tokenizer(examples['text'], truncation=True)
         latex_data = latex_data.map(preprocess, batched=True,remove_columns='text')
         return latex_data
+    
+    def get_hface_dataset(self):
+        self.using_wikitext = True
+        dataset_cache_dir = '/mnt/efs/shared_fs/determined/hf_cache/dataset_tokenizer_cache/'
+        dataset = load_dataset(self.context.get_hparam("dataset_name"), 
+                               self.context.get_hparam("dataset_config"), 
+                               split="train",
+                               cache_dir=dataset_cache_dir)
+
+        BATCHES=100
+        dataset2 = dataset.select(indices=list(range(8*BATCHES)))
+        def preprocess(samples):
+            samples = self.tokenizer(samples['text'],truncation=True)# (11.6.2023) should change
+            return samples
+        self.mapped_dataset = dataset2.map(preprocess,batched=True ,remove_columns=['text'])
+        return self.mapped_dataset
 
     def get_datasets(self,dataset_name):
         '''
@@ -152,26 +170,36 @@ class OPTFinetuneTrial(PyTorchTrial):
         if self.dataset_name=='english_to_latex':
             dataset = self.get_eng_to_latex_dataset()
         else:
-            dataset_path = '/run/determined/workdir/shared_fs/workshop_data/{}.txt'.format(self.dataset_name)
-            dataset = TextDataset(
-                tokenizer=self.tokenizer,
-                file_path=dataset_path,  # Principles of Data Science - Sinan Ozdemir
-                block_size=32  # length of each chunk of text to use as a datapoint
-            )
+            if self.context.get_hparam("use_hface"):
+                dataset = self.get_hface_dataset()
+            else:
+                dataset_path = '/run/determined/workdir/shared_fs/workshop_data/{}.txt'.format(self.dataset_name)
+                dataset = TextDataset(
+                    tokenizer=self.tokenizer,
+                    file_path=dataset_path,  # Principles of Data Science - Sinan Ozdemir
+                    block_size=32  # length of each chunk of text to use as a datapoint
+                )
         return dataset
 
     def format_batch(self,batch):
         '''
         '''
-        inputs=batch['input_ids']
-        outputs = batch['labels']
-        return inputs, outputs
+        if self.using_wikitext:
+            return (batch['input_ids'] ,batch['input_ids'])
+        else:
+            inputs=batch['input_ids']
+            outputs = batch['labels']
+            return inputs, outputs
+        
     def build_training_data_loader(self) -> None:
         '''
         '''
-        self.train_sampler = RandomSampler(self.dataset)
-        self.train_dataloader = DataLoader(self.dataset, collate_fn =self.data_collator ,sampler=self.train_sampler, batch_size=self.context.get_per_slot_batch_size())
-        return self.train_dataloader
+        if self.using_wikitext:
+            return DataLoader(self.mapped_dataset, collate_fn =self.data_collator ,shuffle=True, batch_size=4)
+        else:
+            self.train_sampler = RandomSampler(self.dataset)
+            self.train_dataloader = DataLoader(self.dataset, collate_fn =self.data_collator ,sampler=self.train_sampler, batch_size=self.context.get_per_slot_batch_size())
+            return self.train_dataloader
     
     def get_batch_length(self, batch):
         '''

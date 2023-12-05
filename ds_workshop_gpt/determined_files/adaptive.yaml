@@ -1,6 +1,6 @@
 name: opt125m_adaptive_finetune
-workspace: HPE Instructors
-project: finetune
+workspace: <your_workspace>
+project: <your_project>
 description: "OPT125m"
 hyperparameters:
     global_batch_size: 32
@@ -19,6 +19,8 @@ hyperparameters:
     epochs: 10
     gradient_accumulation_steps: 1
     dataset_name: 'PDS2'
+    dataset_config: 'wikitext-2-raw-v1'
+    use_hface: false
 bind_mounts:
   - container_path: /mnt/efs
     host_path: /mnt/efs
