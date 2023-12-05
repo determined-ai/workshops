@@ -35,7 +35,7 @@ from transformers import (WEIGHTS_NAME, AdamW, get_linear_schedule_with_warmup,
 from datasets import Dataset, load_dataset
 import peft
 print("peft.__version__: ",peft.__version__)
- 
+
 import transformers
 
 from transformers import (AdamW,
@@ -54,6 +54,10 @@ print("datasets.__version__: ",datasets.__version__)
 from peft import LoraConfig, get_peft_config, get_peft_model, LoraConfig, TaskType
 import bitsandbytes as bnb
 from torch.utils.data import DataLoader, Dataset, SequentialSampler, RandomSampler
+from transformers import AutoModelForCausalLM, AutoTokenizer, GPTQConfig
+import torch
+from peft import prepare_model_for_kbit_training
+from peft import LoraConfig, get_peft_model
 
 from determined.pytorch import DataLoader, LRScheduler, PyTorchTrial, PyTorchTrialContext
 
@@ -95,6 +99,28 @@ class OPTFinetuneTrial(PyTorchTrial):
                                               # quantization_config=bnb_config,
                                               cache_dir=model_cache_dir,
                                               local_files_only=False)
+        
+        model_id = "TheBloke/Llama-2-7b-Chat-GPTQ"
+        quantization_config_loading = GPTQConfig(bits=4, disable_exllama=True)
+        tokenizer = AutoTokenizer.from_pretrained(model_id, cache_dir=tokenizer_cache_dir)
+        model = AutoModelForCausalLM.from_pretrained(model_id,
+                                                     quantization_config=quantization_config_loading, 
+                                                     cache_dir=model_cache_dir, 
+                                                     device_map="auto")
+        model.gradient_checkpointing_enable()
+        model = prepare_model_for_kbit_training(model)
+        
+        config = LoraConfig(
+            r=8,
+            lora_alpha=32,
+            target_modules=["k_proj","o_proj","q_proj","v_proj"],
+            lora_dropout=0.05,
+            bias="none",
+            task_type="CAUSAL_LM"
+        )
+
+        model = get_peft_model(model, config)
+        # model.print_trainable_parameters()
         self.model = self.context.wrap_model(self.model)
         # get optimizer
         # Prepare optimizer and schedule (linear warmup and decay)
