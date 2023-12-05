@@ -26,12 +26,12 @@ profiling:
   begin_on_batch: 0
   enabled: true
 min_checkpoint_period:
-  batches: 147
+  batches: 4
 searcher:
     name: single
     metric: eval_loss
     max_length:
-        epochs: 15
+        batches: 16
     smaller_is_better: true
 max_restarts: 0
-entrypoint: python3 -m determined.launch.torch_distributed --trial model_def:GPT2Finetune
+entrypoint: python3 -m determined.launch.torch_distributed --trial model_def:MistralFinetune

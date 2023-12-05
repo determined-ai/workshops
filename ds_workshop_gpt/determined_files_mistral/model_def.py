@@ -36,7 +36,7 @@ from transformers import (WEIGHTS_NAME, AdamW, get_linear_schedule_with_warmup,
 
 from determined.pytorch import DataLoader, LRScheduler, PyTorchTrial, PyTorchTrialContext
 
-class GPT2Finetune(PyTorchTrial):
+class MistralFinetune(PyTorchTrial):
     
     def __init__(self,context: PyTorchTrialContext) -> None:
         '''
@@ -63,7 +63,7 @@ class GPT2Finetune(PyTorchTrial):
         # get pretrained model
         peft_config = LoraConfig(
                                     r=1,
-                                    lora_alpha=16,
+                                    lora_alpha=1,
                                     lora_dropout=0.05,
                                     bias="none",
                                     task_type="CAUSAL_LM",
@@ -93,9 +93,14 @@ class GPT2Finetune(PyTorchTrial):
             {'params': [p for n, p in self.model.named_parameters() if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
             ]
         
-        self.optimizer = self.context.wrap_optimizer(
-            AdamW(optimizer_grouped_parameters, lr=self.learning_rate, eps=self.adam_epsilon)
-            )
+        self.optimizer =  self.context.wrap_optimizer(bnb.optim.Adam8bit(optimizer_grouped_parameters, lr=self.learning_rate))
+
+        # Thank you @gregorlied https://www.kaggle.com/nbroad/8-bit-adam-optimization/comments#1661976
+        for module in self.model.modules():
+            if isinstance(module, torch.nn.Embedding):
+                bnb.optim.GlobalOptimManager.get_instance().register_module_override(
+                    module, 'weight', {'optim_bits': 32}
+                )     
         self.data_collator = DataCollatorForLanguageModeling(tokenizer=self.tokenizer, mlm=False)
 
         # get learn rate scheduler
@@ -146,7 +151,7 @@ class GPT2Finetune(PyTorchTrial):
         '''
         '''
         self.train_sampler = RandomSampler(self.dataset)
-        self.train_dataloader = DataLoader(self.dataset, collate_fn =self.data_collator ,sampler=self.train_sampler, batch_size=self.context.get_per_slot_batch_size())
+        self.train_dataloader = DataLoader(self.dataset, collate_fn =self.data_collator ,shuffle=True, batch_size=self.context.get_per_slot_batch_size())
         return self.train_dataloader
     
     def get_batch_length(self, batch):
@@ -160,7 +165,7 @@ class GPT2Finetune(PyTorchTrial):
         '''
         '''
         self.eval_sampler = SequentialSampler(self.dataset)
-        self.validataion_dataloader = DataLoader(self.dataset,collate_fn =self.data_collator, sampler=self.eval_sampler, batch_size=self.context.get_per_slot_batch_size())
+        self.validataion_dataloader = DataLoader(self.dataset,collate_fn =self.data_collator, shuffle=False, batch_size=self.context.get_per_slot_batch_size())
         return self.validataion_dataloader
     
     def train_batch(self,batch,epoch_idx, batch_idx):

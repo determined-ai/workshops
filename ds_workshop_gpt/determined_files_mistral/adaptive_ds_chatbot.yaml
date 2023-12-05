@@ -1,4 +1,4 @@
-name: adaptive_gpt2_finetune_data_science_chatbot
+name: adaptive_mistral_finetune_data_science_chatbot
 workspace: <your_workspace>
 project: <your_project>
 description: "DS Workshop"
@@ -39,4 +39,4 @@ searcher:
     smaller_is_better: true
     max_trials: 4
 max_restarts: 0
-entrypoint: python3 -m determined.launch.torch_distributed --trial model_def:GPT2Finetune
+entrypoint: python3 -m determined.launch.torch_distributed --trial model_def:MistralFinetune
