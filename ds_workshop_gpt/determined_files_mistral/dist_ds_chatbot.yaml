@@ -1,9 +1,9 @@
-name: gpt2_finetune_data_science_chatbot
-workspace: HPE Instructors
-project: finetune
+name: mistral_gpt2_finetune_data_science_chatbot
+workspace: <your_workspace>
+project: <your_project>
 description: "DS Workshop"
 hyperparameters:
-    global_batch_size: 32
+    global_batch_size: 4
     weight_decay: 0.0
     learning_rate: 5e-5
     adam_epsilon: 1e-8
@@ -13,9 +13,13 @@ hyperparameters:
     dataset_name: 'PDS2'
 environment:
     image: "mendeza/mistral-rag-env:0.0.1"
-records_per_epoch: 147 # There are 4696 examples total in the PDS2 dataset, shortening to 147 records per epoch for experimentation
+    environment_variables:                                                                       
+    - NCCL_DEBUG=INFO                                                                           
+    # You may need to modify this to match your network configuration.                          
+    - NCCL_SOCKET_IFNAME=ens,eth,ib
+records_per_epoch: 147  # There are 4696 examples total in the PDS2 dataset, shortening to 147 records per epoch for experimentation
 resources:
-    slots_per_trial: 1
+    slots_per_trial: 2
 min_validation_period:
   batches: 4
 profiling:

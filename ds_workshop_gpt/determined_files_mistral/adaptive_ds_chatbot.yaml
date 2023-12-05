@@ -1,9 +1,9 @@
-name: mistral_gpt2_finetune_data_science_chatbot
+name: adaptive_gpt2_finetune_data_science_chatbot
 workspace: <your_workspace>
 project: <your_project>
 description: "DS Workshop"
 hyperparameters:
-    global_batch_size: 32
+    global_batch_size: 4
     weight_decay: 0.0
     learning_rate:
         type: log

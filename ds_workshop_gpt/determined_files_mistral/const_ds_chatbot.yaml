@@ -1,9 +1,9 @@
-name: gpt2_finetune_data_science_chatbot
+name: mistral_finetune_data_science_chatbot
 workspace: HPE Instructors
 project: finetune
 description: "DS Workshop"
 hyperparameters:
-    global_batch_size: 32
+    global_batch_size: 2
     weight_decay: 0.0
     learning_rate: 5e-5
     adam_epsilon: 1e-8

@@ -20,15 +20,19 @@ from datasets import Dataset as HFDataset
 import pandas as pd
 # try:
 from torch.utils.tensorboard import SummaryWriter
+import peft
+from peft import LoraConfig, get_peft_config, get_peft_model, LoraConfig, TaskType
 
+import bitsandbytes as bnb
+print("peft.__version__: ",peft.__version__)
 from tqdm import tqdm, trange
 
 from transformers import (WEIGHTS_NAME, AdamW, get_linear_schedule_with_warmup,
-                                  BertConfig, BertForMaskedLM, BertTokenizer,
+                                  BertConfig, AutoTokenizer,BertForMaskedLM, BertTokenizer,
                                   GPT2Config, GPT2LMHeadModel, GPT2Tokenizer,
                                   OpenAIGPTConfig, OpenAIGPTLMHeadModel, OpenAIGPTTokenizer,
                                   RobertaConfig, RobertaForMaskedLM, RobertaTokenizer,
-                                  DistilBertConfig, DistilBertForMaskedLM, DistilBertTokenizer,TextDataset,DataCollatorForLanguageModeling)
+                                  DistilBertConfig, DistilBertForMaskedLM, BitsAndBytesConfig, AutoModelForCausalLM, DistilBertTokenizer,TextDataset,DataCollatorForLanguageModeling)
 
 from determined.pytorch import DataLoader, LRScheduler, PyTorchTrial, PyTorchTrialContext
 
@@ -46,7 +50,7 @@ class GPT2Finetune(PyTorchTrial):
         self.epochs = self.context.get_hparam("epochs")
         self.gradient_accumulation_steps = self.context.get_hparam("gradient_accumulation_steps")
         # get tokenizer
-        self.tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+        self.tokenizer = AutoTokenizer.from_pretrained('/run/determined/workdir/shared_fs/mistral_pretrained/mistral-instruct-7b-tokenizer')
         self.tokenizer.pad_token = self.tokenizer.eos_token
         
         # get dataset
@@ -57,7 +61,29 @@ class GPT2Finetune(PyTorchTrial):
     
         
         # get pretrained model
-        self.model = GPT2LMHeadModel.from_pretrained('gpt2')
+        peft_config = LoraConfig(
+                                    r=1,
+                                    lora_alpha=16,
+                                    lora_dropout=0.05,
+                                    bias="none",
+                                    task_type="CAUSAL_LM",
+                                    target_modules=["q_proj", "k_proj", "v_proj", "o_proj","gate_proj"]
+                                )
+
+        bnb_config=BitsAndBytesConfig(load_in_4bit=True,
+                                                      bnb_4bit_compute_dtype=torch.bfloat16,
+                                                      bnb_4bit_use_double_quant=False,
+                                                      bnb_4bit_quant_type='nf4')
+        self.model = AutoModelForCausalLM.from_pretrained('/run/determined/workdir/shared_fs/mistral_pretrained/mistral-instruct-7b-model',
+                                              load_in_4bit=False,
+                                              torch_dtype=torch.bfloat16,
+                                              device_map={"": 0},
+                                              trust_remote_code=True,
+                                              quantization_config=bnb_config,
+                                              cache_dir=None,
+                                              local_files_only=False)
+        self.model = get_peft_model(self.model, peft_config)
+        print(self.model.print_trainable_parameters())
         self.model = self.context.wrap_model(self.model)
         # get optimizer
         # Prepare optimizer and schedule (linear warmup and decay)

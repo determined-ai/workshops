@@ -1,6 +1,6 @@
 name: gpt2_finetune_english2latex_chatbot
-workspace: <your_workspace>
-project: <your_project>
+workspace: HPE Instructors
+project: finetune
 description: "DS Workshop"
 hyperparameters:
     global_batch_size: 2
@@ -12,7 +12,7 @@ hyperparameters:
     gradient_accumulation_steps: 1
     dataset_name: 'english_to_latex'
 environment:
-    image: "hugcyrill/workshops:chat_0.1"
+    image: "mendeza/mistral-rag-env:0.0.1"
 records_per_epoch: 50 # 50 examples, 2 per batch: 50/2 is 25 records for an epoch
 resources:
     slots_per_trial: 1

@@ -1,0 +1,32 @@
+bind_mounts:
+- container_path: /run/determined/workdir/shared_fs
+  host_path: /mnt/efs
+  propagation: rprivate
+  read_only: false
+debug: false
+description: andrew.mendez.test
+entrypoint:
+- /run/determined/jupyter/notebook-entrypoint.sh
+environment:
+  add_capabilities: null
+  drop_capabilities: null
+  environment_variables: {}
+  force_pull_image: false
+  image:
+    cpu: mendeza/mistral-rag-env:0.0.1
+    cuda: mendeza/mistral-rag-env:0.0.1
+    rocm: mendeza/mistral-rag-env:0.0.1
+  pod_spec: null
+  ports: null
+  proxy_ports: null
+idle_timeout: null
+notebook_idle_type: kernels_or_terminals
+pbs: {}
+resources:
+  devices: null
+  resource_pool: compute-pool-a10
+  slots: 1
+  weight: 1
+slurm: {}
+work_dir: null
+
