@@ -8,7 +8,7 @@ hyperparameters:
     learning_rate: 5e-5
     adam_epsilon: 1e-8
     warmup_steps: 0
-    epochs: 2
+    epochs: 1
     gradient_accumulation_steps: 1
     dataset_name: 'PDS2'
     dataset_config: 'wikitext-2-raw-v1'
@@ -23,7 +23,7 @@ environment:
 records_per_epoch: 64
 resources:
     slots_per_trial: 1
-    resource_pool: compute-pool-a10
+    resource_pool: compute-pool
 min_validation_period:
   batches: 2
 profiling:
