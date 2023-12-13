@@ -35,7 +35,7 @@ from transformers import (WEIGHTS_NAME, AdamW, get_linear_schedule_with_warmup,
 from datasets import Dataset, load_dataset
 import peft
 print("peft.__version__: ",peft.__version__)
- 
+
 import transformers
 
 from transformers import (AdamW,
@@ -54,6 +54,10 @@ print("datasets.__version__: ",datasets.__version__)
 from peft import LoraConfig, get_peft_config, get_peft_model, LoraConfig, TaskType
 import bitsandbytes as bnb
 from torch.utils.data import DataLoader, Dataset, SequentialSampler, RandomSampler
+from transformers import AutoModelForCausalLM, AutoTokenizer, GPTQConfig
+import torch
+from peft import prepare_model_for_kbit_training
+from peft import LoraConfig, get_peft_model
 
 from determined.pytorch import DataLoader, LRScheduler, PyTorchTrial, PyTorchTrialContext
 
@@ -63,8 +67,6 @@ class OPTFinetuneTrial(PyTorchTrial):
         '''
         '''
         self.context = context
-        self.using_wikitext = self.context.get_hparam("use_hface")
-
         # get hyperparametes
         self.weight_decay=self.context.get_hparam("weight_decay")
         self.learning_rate=self.context.get_hparam("learning_rate")
@@ -97,6 +99,28 @@ class OPTFinetuneTrial(PyTorchTrial):
                                               # quantization_config=bnb_config,
                                               cache_dir=model_cache_dir,
                                               local_files_only=False)
+        
+        model_id = "TheBloke/Llama-2-7b-Chat-GPTQ"
+        quantization_config_loading = GPTQConfig(bits=4, disable_exllama=True)
+        tokenizer = AutoTokenizer.from_pretrained(model_id, cache_dir=tokenizer_cache_dir)
+        model = AutoModelForCausalLM.from_pretrained(model_id,
+                                                     quantization_config=quantization_config_loading, 
+                                                     cache_dir=model_cache_dir, 
+                                                     device_map="auto")
+        model.gradient_checkpointing_enable()
+        model = prepare_model_for_kbit_training(model)
+        
+        config = LoraConfig(
+            r=8,
+            lora_alpha=32,
+            target_modules=["k_proj","o_proj","q_proj","v_proj"],
+            lora_dropout=0.05,
+            bias="none",
+            task_type="CAUSAL_LM"
+        )
+
+        model = get_peft_model(model, config)
+        # model.print_trainable_parameters()
         self.model = self.context.wrap_model(self.model)
         # get optimizer
         # Prepare optimizer and schedule (linear warmup and decay)
@@ -147,22 +171,6 @@ class OPTFinetuneTrial(PyTorchTrial):
             return self.tokenizer(examples['text'], truncation=True)
         latex_data = latex_data.map(preprocess, batched=True,remove_columns='text')
         return latex_data
-    
-    def get_hface_dataset(self):
-        self.using_wikitext = True
-        dataset_cache_dir = '/mnt/efs/shared_fs/determined/hf_cache/dataset_tokenizer_cache/'
-        dataset = load_dataset(self.context.get_hparam("dataset_name"), 
-                               self.context.get_hparam("dataset_config"), 
-                               split="train",
-                               cache_dir=dataset_cache_dir)
-
-        BATCHES=100
-        dataset2 = dataset.select(indices=list(range(8*BATCHES)))
-        def preprocess(samples):
-            samples = self.tokenizer(samples['text'],truncation=True)# (11.6.2023) should change
-            return samples
-        self.mapped_dataset = dataset2.map(preprocess,batched=True ,remove_columns=['text'])
-        return self.mapped_dataset
 
     def get_datasets(self,dataset_name):
         '''
@@ -170,36 +178,26 @@ class OPTFinetuneTrial(PyTorchTrial):
         if self.dataset_name=='english_to_latex':
             dataset = self.get_eng_to_latex_dataset()
         else:
-            if self.context.get_hparam("use_hface"):
-                dataset = self.get_hface_dataset()
-            else:
-                dataset_path = '/run/determined/workdir/shared_fs/workshop_data/{}.txt'.format(self.dataset_name)
-                dataset = TextDataset(
-                    tokenizer=self.tokenizer,
-                    file_path=dataset_path,  # Principles of Data Science - Sinan Ozdemir
-                    block_size=32  # length of each chunk of text to use as a datapoint
-                )
+            dataset_path = '/run/determined/workdir/shared_fs/workshop_data/{}.txt'.format(self.dataset_name)
+            dataset = TextDataset(
+                tokenizer=self.tokenizer,
+                file_path=dataset_path,  # Principles of Data Science - Sinan Ozdemir
+                block_size=32  # length of each chunk of text to use as a datapoint
+            )
         return dataset
 
     def format_batch(self,batch):
         '''
         '''
-        if self.using_wikitext:
-            return (batch['input_ids'] ,batch['input_ids'])
-        else:
-            inputs=batch['input_ids']
-            outputs = batch['labels']
-            return inputs, outputs
-        
+        inputs=batch['input_ids']
+        outputs = batch['labels']
+        return inputs, outputs
     def build_training_data_loader(self) -> None:
         '''
         '''
-        if self.using_wikitext:
-            return DataLoader(self.mapped_dataset, collate_fn =self.data_collator ,shuffle=True, batch_size=4)
-        else:
-            self.train_sampler = RandomSampler(self.dataset)
-            self.train_dataloader = DataLoader(self.dataset, collate_fn =self.data_collator ,sampler=self.train_sampler, batch_size=self.context.get_per_slot_batch_size())
-            return self.train_dataloader
+        self.train_sampler = RandomSampler(self.dataset)
+        self.train_dataloader = DataLoader(self.dataset, collate_fn =self.data_collator ,sampler=self.train_sampler, batch_size=self.context.get_per_slot_batch_size())
+        return self.train_dataloader
     
     def get_batch_length(self, batch):
         '''
