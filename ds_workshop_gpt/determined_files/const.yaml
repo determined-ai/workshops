@@ -1,6 +1,6 @@
 name: opt125m_finetune
-workspace: HPE Instructors
-project: finetune
+workspace: <your workspace>
+project: <your project>
 description: "OPT125m"
 hyperparameters:
     global_batch_size: 16
