@@ -1,9 +1,9 @@
 name: opt125m_adaptive_finetune
-workspace: <your_workspace>
-project: <your_project>
+workspace: <my_workspace>
+project: <my_project>
 description: "OPT125m"
 hyperparameters:
-    global_batch_size: 32
+    global_batch_size: 64
     weight_decay: 0.0
     learning_rate:
         type: log
@@ -33,7 +33,7 @@ resources:
     slots_per_trial: 2
     resource_pool: compute-pool-a10
 min_validation_period:
-  batches: 2
+  batches: 10
 profiling:
   begin_on_batch: 0
   enabled: true
@@ -43,7 +43,7 @@ searcher:
     name: adaptive_asha
     metric: eval_loss
     max_length:
-        epochs: 30
+        epochs: 15
     smaller_is_better: true
     max_trials: 4
 max_restarts: 0
