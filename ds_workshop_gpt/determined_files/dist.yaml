@@ -23,7 +23,7 @@ environment:
 records_per_epoch: 64 # There are 4696 examples total in the PDS2 dataset, shortening to 147 records per epoch for experimentation
 resources:
     slots_per_trial: 2
-    resource_pool: compute-pool-a10
+    resource_pool: compute-pool
 min_validation_period:
   batches: 10
 profiling:
