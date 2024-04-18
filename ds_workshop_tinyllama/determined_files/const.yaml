@@ -1,0 +1,40 @@
+name: tiny llama lora easy
+debug: false
+workspace: Stable Diffusion
+project: TinyLlama
+environment:
+  environment_variables:
+    - NCCL_DEBUG=INFO
+    - HF_HOME=/nvmefs1/agnieszka.ciborowska/hf_cache
+  image: determinedai/environments-dev:python-3.10-pytorch-2.0-deepspeed-0.10.0-smartsim
+resources:
+  slots_per_trial: 1
+  resource_pool: compute-pool
+searcher:
+  name: single
+  max_length:
+    batches: 5000
+  metric: eval_accuracy
+  smaller_is_better: false
+hyperparameters:
+  #model: "mistralai/Mistral-7B-Instruct-v0.2"
+  model: "TinyLlama/TinyLlama-1.1B-Chat-v0.4"
+  dataset_subset: "easy"
+  lora: true
+  training_args:
+    output_dir: "/tmp/llm_finetuning"
+    max_steps: 4000
+    per_device_train_batch_size: 1
+    per_device_eval_batch_size: 1
+    fp16: true
+    evaluation_strategy: "steps"
+    eval_steps: 1000
+    logging_strategy: "steps"
+    logging_steps: 100
+    save_strategy: "steps"
+    save_steps: 1000
+    learning_rate: 1e-5
+entrypoint: >-
+  python -m determined.launch.torch_distributed
+  python finetune.py
+max_restarts: 0
