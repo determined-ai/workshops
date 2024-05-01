@@ -1,6 +1,6 @@
 name: tiny llama lora easy
 debug: false
-workspace: Stable Diffusion
+workspace: user-onboarding
 project: TinyLlama
 environment:
   environment_variables:
